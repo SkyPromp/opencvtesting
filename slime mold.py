@@ -30,24 +30,29 @@ class Vector:
             self.y += math.sin(self.direction) * self.size
 
 
+# Summon the starting vectors
+def createVectors(amount=500, radius=0):
+    vectors_out = []
+    for k in range(amount):
+        vectors_out.append(
+                    Vector(k/amount * 2 * math.pi,  # direction
+                    1,  # stepsize
+                    (img.shape[0] // 2 + radius * math.cos(k/amount * 2 * math.pi),  # x coordinate of the vector
+                     img.shape[1] // 2 + radius * math.sin(k/amount * 2 * math.pi)),  # y coordinate of the vector
+                    (img.shape[0], img.shape[1])))  # shape of the image
+
+    return vectors_out
+
+
+# Create empty canvas
 img = np.zeros((135, 240, 1), dtype='uint8')
 
-# out = cv.VideoWriter('vectorsHD60fps.mp4', cv.VideoWriter_fourcc(*'mp4v'), 60, (img.shape[1], img.shape[0]), False)
+# make mp4 file with correct specifications
+# out = cv.VideoWriter('recording.mp4', cv.VideoWriter_fourcc(*'mp4v'), 60, (img.shape[1], img.shape[0]), False)
 
-# Summon the starting vectors
-vectors = []
-amount_vectors = 500
-radius = 0
-for k in range(amount_vectors):
-    vectors.append(
-                Vector(k/amount_vectors * 2 * math.pi,  # direction
-                1,  # stepsize
-                (img.shape[0] // 2 + radius * math.cos(k/amount_vectors * 2 * math.pi),  # x coordinate of the vector
-                 img.shape[1] // 2 + radius * math.sin(k/amount_vectors * 2 * math.pi)),  # y coordinate of the vector
-                (img.shape[0], img.shape[1])))  # shape of the image
+vectors = createVectors()
 
-
-for _ in range(1800):
+for _ in range(500):
     # img = cv.GaussianBlur(img, (3, 3), cv.BORDER_DEFAULT)
     cv.imshow("img", cv.resize(img, (img.shape[1]*8, img.shape[0]*8)))  # show blurred image
     # out.write(img)

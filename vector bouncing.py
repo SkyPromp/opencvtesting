@@ -32,7 +32,7 @@ class Vector:
 
 img = np.zeros((135, 240, 1), dtype='uint8')
 
-# out = cv.VideoWriter('vectorsHD60fps.mp4', cv.VideoWriter_fourcc(*'mp4v'), 60, (img.shape[1], img.shape[0]), False)
+# out = cv.VideoWriter('recording.mp4', cv.VideoWriter_fourcc(*'mp4v'), 60, (img.shape[1], img.shape[0]), False)
 
 # Summon a central vector
 vector = Vector(random.random() * 2 * math.pi, 1, (img.shape[0]//2, img.shape[1]//2), (img.shape[0], img.shape[1]))
