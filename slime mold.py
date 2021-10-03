@@ -2,6 +2,7 @@ import cv2 as cv
 import numpy as np
 import random
 import math
+import winsound
 
 
 # Define vectors and their movement
@@ -68,35 +69,47 @@ class Vector:
         self.x, self.y = self.coordsInBounds(self.x, self.y)
 
 
-# Summon the starting vectors
-def createVectors(amount=500, radius=0):
+# Summon the starting vectors (direction should be 1 or -1
+def createVectorRing(amount=500, radius=0, direction=1):
     vectors_out = []
     for k in range(amount):
         vectors_out.append(
                     Vector(k/amount * 2 * math.pi,  # direction
-                    (img.shape[0] // 2 + radius * math.cos(k/amount * 2 * math.pi),  # x coordinate of the vector
-                     img.shape[1] // 2 + radius * math.sin(k/amount * 2 * math.pi)),  # y coordinate of the vector
+                    (img.shape[0] // 2 + direction * radius * math.cos(k/amount * 2 * math.pi),  # x coordinate of the vector
+                     img.shape[1] // 2 + direction * radius * math.sin(k/amount * 2 * math.pi)),  # y coordinate of the vector
                     (img.shape[0], img.shape[1])))  # shape of the image
 
     return vectors_out
 
 
+def createVectorCircle(amount=500, radius=0, direction=1):
+    vectors_out = []
+    for k in range(amount):
+        vectors_out.append(
+            Vector(k/amount * 2 * math.pi,  # direction
+                   (img.shape[0] // 2 + direction * random.random() * radius * math.cos(k/amount * 2 * math.pi),  # x coordinate of the vector
+                    img.shape[1] // 2 + direction * random.random() * radius * math.sin(k/amount * 2 * math.pi)),  # y coordinate of the vector
+                   (img.shape[0], img.shape[1])))  # shape of the image
+
+    return vectors_out
+
+
 # Create empty canvas
-img = np.zeros((1080, 1920, 1), dtype='uint8')
+img = np.zeros((270, 480, 1), dtype='uint8')
 
 # make mp4 file with correct specifications
-out = cv.VideoWriter('slimeHD60fps.mp4', cv.VideoWriter_fourcc(*'mp4v'), 60, (img.shape[1], img.shape[0]), False)
+# out = cv.VideoWriter('slimeHD60fps.mp4', cv.VideoWriter_fourcc(*'mp4v'), 60, (img.shape[1], img.shape[0]), False)
 
-vectors = createVectors(25000)
+vectors = createVectorRing(8000, 100, -1)
 frames = 7200
 trail_shortness = 2
 vector_view_angle = math.pi/4
 for progress in range(frames):
-    print(100 * progress/frames, "%", sep="")
+    # print(100 * progress/frames, "%", sep="")
     img = cv.GaussianBlur(img, (3, 3), cv.BORDER_DEFAULT)
-    # cv.imshow("img", cv.resize(img, (img.shape[1]*2, img.shape[0]*2)))  # show blurred image
-    out.write(img)
-    # cv.waitKey(1)
+    cv.imshow("img", cv.resize(img, (img.shape[1]*2, img.shape[0]*2)))  # show blurred image
+    # out.write(img)
+    cv.waitKey(1)
 
     # Fades out the color until it becomes black
     img[:, :] -= trail_shortness
@@ -107,4 +120,5 @@ for progress in range(frames):
         vector.getRelativePositions(vector_view_angle, 10, img)
 
 
-out.release()
+# out.release()
+winsound.Beep(440, 200)
