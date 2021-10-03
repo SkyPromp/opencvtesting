@@ -154,32 +154,29 @@ def createVectors(amount=500, radius=0):
 
 
 # Create empty canvas
-img = np.zeros((135, 240, 1), dtype='uint8')
+img = np.zeros((540, 960, 1), dtype='uint8')
 
 # make mp4 file with correct specifications
-# out = cv.VideoWriter('slime480p.mp4', cv.VideoWriter_fourcc(*'mp4v'), 60, (img.shape[1], img.shape[0]), False)
+out = cv.VideoWriter('slime960p.mp4', cv.VideoWriter_fourcc(*'mp4v'), 60, (img.shape[1], img.shape[0]), False)
 
-vectors = createVectors(500)
+vectors = createVectors(8000)
 
-frames = 3000
+frames = 7200
 for progress in range(frames):
     print(100 * progress/frames, "%", sep="")
     img = cv.GaussianBlur(img, (3, 3), cv.BORDER_DEFAULT)
-    cv.imshow("img", cv.resize(img, (img.shape[1]*4, img.shape[0]*4)))  # show blurred image
-    # out.write(img)
+    cv.imshow("img", cv.resize(img, (img.shape[1]*2, img.shape[0]*2)))  # show blurred image
+    out.write(img)
     cv.waitKey(1)
 
+    # Fades out the color until it becomes black
     trail_shortness = 2
-    for i in range(len(img)):
-        for j in range(len(img[i])):
-            if img[i][j] >= trail_shortness:
-                img[i][j] -= trail_shortness
-            else:
-                img[i][j] = 0
+    img[:, :] -= trail_shortness
+    img[:][img[:] > 255 - trail_shortness] = 0
 
     for i in vectors:
         img[round(i.x)][round(i.y)] = 255
         i.getRelativePositions(math.pi/4, 10, img)
 
 
-# out.release()
+out.release()

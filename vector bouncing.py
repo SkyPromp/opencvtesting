@@ -48,27 +48,20 @@ while check:
                 check = False
                 vectors.append(Vector(random.random() * 2 * math.pi, 1, (i, j), (img.shape[0], img.shape[1])))
 
-passed = {(i.x, i.y) for i in vectors}
-remove = set()
-for _ in range(1800):
+
+for progress in range(8000):
+    print(100*progress/8000, "%", sep="")
     cv.imshow("img", img)  # show blurred image
     # out.write(img)
     cv.waitKey(1)
-    for i in passed:
-        for _ in range(1):  # The speed of the fading, (the higher the number, the faster it fades)
-            if img[i[0]][i[1]] != 0:
-                img[i[0]][i[1]] -= 1
-            else:
-                remove.add(i)
 
-    for i in remove:
-        passed.remove(i)
-
-    remove.clear()
+    # Fades out the color until it becomes black
+    trail_shortness = 1
+    img[:, :] -= trail_shortness
+    img[:][img[:] > 255 - trail_shortness] = 0
 
     for i in vectors:
         img[round(i.x)][round(i.y)] = 255
-        passed.add((round(i.x), round(i.y)))
         i.next()
 
     # blank = np.zeros((1000, 1000, 1), dtype='uint8')
@@ -79,3 +72,4 @@ for _ in range(1800):
     # vector.next()
 
 # out.release()
+cv.destroyAllWindows()
