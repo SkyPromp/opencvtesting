@@ -6,25 +6,19 @@ import math
 
 # Define vectors and their movement
 class Vector:
-    def __init__(self, direction, stepsize, position, board_size):
+    def __init__(self, direction, position, board_size):
         self.x, self.y = position
-        self.size = stepsize
         self.direction = direction
         self.width, self.height = board_size
 
-    def wall(self, length, direction):
-        if self.x + math.cos(direction) * length < 0:
+    def wall(self, direction):
+        if self.x + math.cos(direction) < 0 or self.x + math.cos(direction) >= self.width - 1:
             self.direction = math.pi - direction
 
-        elif self.x + math.cos(direction) * length >= self.width - 1:
-            self.direction = math.pi - direction
+        if self.y + math.sin(direction) < 0 or self.y + math.sin(direction) >= self.height - 1:
+            self.direction = -direction
 
-        if self.y + math.sin(direction) * length < 0:
-            self.direction = -1 * direction
-
-        elif self.y + math.sin(direction) * length >= self.height - 1:
-            self.direction = -1 * direction
-
+    # TODO: Fix this method
     def wallRandomAngle(self, length, direction):
         if self.x + math.cos(direction) * length < 0:
             self.direction = random.random() * math.pi - math.pi / 2
@@ -38,105 +32,40 @@ class Vector:
         elif self.y + math.sin(direction) * length >= self.height - 1:
             self.direction = -1 * math.pi * random.random()
 
-    def nextCentral(self):
-        self.wallRandomAngle(self.size, self.direction)
+    def coordsInBounds(self, x, y):
+        if x > self.width - 1:
+            x = self.width - 1
+        elif x < 0:
+            x = 0
+        if y > self.height - 1:
+            y = self.height - 1
+        elif y < 0:
+            y = 0
 
-        self.x += math.cos(self.direction) * self.size
-        self.y += math.sin(self.direction) * self.size
+        return x, y
+
+    def calculateNextPosition(self, angle, radius):
+        x = round(self.x + math.cos(self.direction + angle) * radius)
+        y = round(self.y + math.sin(self.direction + angle) * radius)
+        return self.coordsInBounds(x, y)
 
     def getRelativePositions(self, angle, radius, image):
-        center_x = round(self.x + math.cos(self.direction) * radius)
-        center_y = round(self.y + math.sin(self.direction) * radius)
+        center_x, center_y = self.calculateNextPosition(0, radius)
+        left_x, left_y = self.calculateNextPosition(angle, radius)
+        right_x, right_y = self.calculateNextPosition(-angle, radius)
 
-        if center_x > image.shape[0] - 1:
-            center_x = image.shape[0] - 1
-        elif center_x < 0:
-            center_x = 0
-        if center_y > image.shape[1] - 1:
-            center_y = image.shape[1] - 1
-        elif center_y < 0:
-            center_y = 0
+        # Will not consider going to a dark square, if all squares are dark, go straight
+        weights = [random.random() * image[center_x][center_y]/255,  # Center weight
+                   random.random() * image[left_x][left_y]/255,  # Left weight
+                   random.random() * image[right_x][right_y]/255]  # Right weight
+        rotation = [0, angle, -angle][max(range(len(weights)), key=weights.__getitem__)]
 
-        left_x = round(self.x + math.cos(self.direction + angle) * radius)
-        left_y = round(self.y + math.sin(self.direction + angle) * radius)
+        self.wall(self.direction + rotation)
+        self.x += math.cos(self.direction + rotation)
+        self.y += math.sin(self.direction + rotation)
 
-        if left_x > image.shape[0] - 1:
-            left_x = image.shape[0] - 1
-        elif left_x < 0:
-            left_x = 0
-        if left_y > image.shape[1] - 1:
-            left_y = image.shape[1] - 1
-        elif left_y < 0:
-            left_y = 0
-
-        right_x = round(self.x + math.cos(self.direction - angle) * radius)
-        right_y = round(self.y + math.sin(self.direction - angle) * radius)
-
-        if right_x > image.shape[0] - 1:
-            right_x = image.shape[0] - 1
-        elif right_x < 0:
-            right_x = 0
-        if right_y > image.shape[1] - 1:
-            right_y = image.shape[1] - 1
-        elif right_y < 0:
-            right_y = 0
-
-        # afraid of the dark
-        left_weight = random.random() * image[left_x][left_y]/255
-        center_weight = random.random() * image[center_x][center_y]/255
-        right_weight = random.random() * image[right_x][right_y]/255
-
-        # left_weight = random.random() * (1/255 + image[left_x][left_y]/255)
-        # center_weight = random.random() * (1/255 + image[center_x][center_y]/255)
-        # right_weight = random.random() * (1/255 + image[right_x][right_y]/255
-
-        if center_weight >= left_weight:
-            if center_weight >= right_weight:
-                self.nextCentral()
-            else:
-                self.wall(self.size, self.direction - angle)
-                self.x += math.cos(self.direction - angle) * self.size
-                self.y += math.sin(self.direction - angle) * self.size
-
-        elif center_weight >= right_weight:
-            if center_weight >= left_weight:
-                self.nextCentral()
-            else:
-                self.wall(self.size, self.direction + angle)
-                self.x += math.cos(self.direction + angle) * self.size
-                self.y += math.sin(self.direction + angle) * self.size
-
-        else:
-            if right_weight > left_weight:
-                self.wall(self.size, self.direction - angle)
-                self.x += math.cos(self.direction - angle) * self.size
-                self.y += math.sin(self.direction - angle) * self.size
-            elif left_weight > right_weight:
-                self.wall(self.size, self.direction + angle)
-                self.x += math.cos(self.direction + angle) * self.size
-                self.y += math.sin(self.direction + angle) * self.size
-
-            elif random.random() < 0.5:
-                self.wall(self.size, self.direction - angle)
-                self.x += math.cos(self.direction - angle) * self.size
-                self.y += math.sin(self.direction - angle) * self.size
-            else:
-                self.wall(self.size, self.direction + angle)
-                self.x += math.cos(self.direction + angle) * self.size
-                self.y += math.sin(self.direction + angle) * self.size
-
-        if self.x > self.width - 1:
-            self.x = self.width - 1
-        elif self.x < 0:
-            self.x = 0
-
-        if self.y > self.height - 1:
-            self.y = self.height - 1
-        elif self.y < 0:
-            self.y = 0
-
-
-        # return (left_x, left_y), (center_x, center_y), (right_x, right_y)
+        # TODO: Find a way to remove this check
+        self.x, self.y = self.coordsInBounds(self.x, self.y)
 
 
 # Summon the starting vectors
@@ -145,7 +74,6 @@ def createVectors(amount=500, radius=0):
     for k in range(amount):
         vectors_out.append(
                     Vector(k/amount * 2 * math.pi,  # direction
-                    1,  # stepsize
                     (img.shape[0] // 2 + radius * math.cos(k/amount * 2 * math.pi),  # x coordinate of the vector
                      img.shape[1] // 2 + radius * math.sin(k/amount * 2 * math.pi)),  # y coordinate of the vector
                     (img.shape[0], img.shape[1])))  # shape of the image
@@ -154,29 +82,29 @@ def createVectors(amount=500, radius=0):
 
 
 # Create empty canvas
-img = np.zeros((540, 960, 1), dtype='uint8')
+img = np.zeros((1080, 1920, 1), dtype='uint8')
 
 # make mp4 file with correct specifications
-out = cv.VideoWriter('slime960p.mp4', cv.VideoWriter_fourcc(*'mp4v'), 60, (img.shape[1], img.shape[0]), False)
+out = cv.VideoWriter('slimeHD60fps.mp4', cv.VideoWriter_fourcc(*'mp4v'), 60, (img.shape[1], img.shape[0]), False)
 
-vectors = createVectors(8000)
-
+vectors = createVectors(25000)
 frames = 7200
+trail_shortness = 2
+vector_view_angle = math.pi/4
 for progress in range(frames):
     print(100 * progress/frames, "%", sep="")
     img = cv.GaussianBlur(img, (3, 3), cv.BORDER_DEFAULT)
-    cv.imshow("img", cv.resize(img, (img.shape[1]*2, img.shape[0]*2)))  # show blurred image
+    # cv.imshow("img", cv.resize(img, (img.shape[1]*2, img.shape[0]*2)))  # show blurred image
     out.write(img)
-    cv.waitKey(1)
+    # cv.waitKey(1)
 
     # Fades out the color until it becomes black
-    trail_shortness = 2
     img[:, :] -= trail_shortness
     img[:][img[:] > 255 - trail_shortness] = 0
 
-    for i in vectors:
-        img[round(i.x)][round(i.y)] = 255
-        i.getRelativePositions(math.pi/4, 10, img)
+    for vector in vectors:
+        img[round(vector.x)][round(vector.y)] = 255
+        vector.getRelativePositions(vector_view_angle, 10, img)
 
 
 out.release()
